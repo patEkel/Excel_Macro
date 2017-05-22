@@ -1,0 +1,249 @@
+Sub Macro_1_Unique_Patrons()
+'
+'                              *********gsrr Unique Vs Total Macro*********
+'
+'
+'      *****   ***    **   **   **   **   **   **   **   **    ***   *****     '
+'                                                                              '
+'       **** Calculate Number of individual(uniuqe) and total Patrons ****     '
+'                                                                              '
+'      *****   ***    **   **   **   **   **   **   **   **    ***    *****    '
+'
+
+    If WorksheetFunction.CountA(Cells) = 0 Then 'No Cells have data
+        MsgBox "There is no range to be selected.", , "No cells contain any values."
+        Exit Sub
+    Else
+        
+        Dim FirstRow&, FirstCol&, LastRow&, LastCol&
+        Dim myUsedRange As Range
+        FirstRow = Cells.Find(What:="*", SearchDirection:=xlNext, SearchOrder:=xlByRows).Row
+        
+        On Error Resume Next
+        FirstCol = Cells.Find(What:="*", SearchDirection:=xlNext, SearchOrder:=xlByColumns).Column
+        If Err.Number <> 0 Then ' Handle error
+            Err.Clear
+            MsgBox _
+            "There are horizontally merged cells on the sheet" & vbCrLf & _
+            "that should be removed in order to locate the range.", 64, "Please unmerge all cells."
+            Exit Sub
+        End If
+        
+        ' Set last row, last column, and first row *** first row is always row #1 ***
+        LastRow = Cells.Find(What:="*", SearchDirection:=xlPrevious, SearchOrder:=xlByRows).Row
+        LastCol = Cells.Find(What:="*", SearchDirection:=xlPrevious, SearchOrder:=xlByColumns).Column
+        FirstRow = 1 'start of data is always in first row
+        
+        ' Set range to all of column B
+        Set myUsedRange = Range(Cells(FirstRow, LastCol), Cells(LastRow, LastCol))
+        'myUsedRange.Select
+        'MsgBox "The data range on this worksheet is " & myUsedRange.Address(0, 0) & ".", 64, "Range address:"
+    End If
+   
+    'Copy data, past in new sheet, clean data
+    myUsedRange.Select
+    Selection.Copy
+    Sheets.Add After:=ActiveSheet
+    ActiveSheet.Paste
+    
+    ' Mr.Clean that data
+    Selection.Replace What:="NW", Replacement:="", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+    Selection.Replace What:="NE", Replacement:="", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+    Selection.Replace What:="S", Replacement:="", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+    Selection.Replace What:="08", Replacement:="", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+    Selection.Replace What:="06", Replacement:="", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+    Selection.Replace What:="04", Replacement:="", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+    Selection.Replace What:="':", Replacement:="", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+    Selection.Replace What:="([Unued])", Replacement:="", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+'''''''''''''''''''''''''''''''''''''''''''''''''
+'    ' THIS to replce above...but it
+'    Selection.Replace What:="NW", What:="NE", What:="S", What:="08", What:="06", _
+'        What:="04", What:="':", What:="([Unued])", Replacement:="", LookAt:=xlPart, _
+'        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False
+                                               
+    'Sort data
+    Selection.Sort key1:=Range("A1", Range("A1").End(xlDown)), _
+            order1:=xlAscending, Header:=xlNo
+         
+    ' label unique and non unique patrons
+    Range("B1").Select
+    ActiveCell.FormulaR1C1 = "=IF(R[1]C[-1]=RC[-1], ""not unique"", ""unique"")"
+    Range("B1").Select
+    Selection.AutoFill Destination:=Range("B1 :  B" & LastRow)
+    
+    ' count unique and non-unique
+    Cells(1, 3).Value = "# Unique Patrons"
+    Cells(1, 3).Font.Bold = True
+    Cells(2, 3).Value = Application.CountIf(Range("B1 :  B" & LastRow), "unique")
+    
+    ' total patrons
+    Cells(1, 5).Value = "# Room Entries"
+    Cells(1, 5).Font.Bold = True
+    Cells(2, 5).Value = LastRow
+    
+    ' Switch back to worksheet 1
+    Worksheets("Sheet1").Activate
+    
+    ' Construct Short date helper column
+    Range("C1").Select
+    ActiveCell.FormulaR1C1 = "=INT(RC[-2])"
+    Selection.NumberFormat = "m/d/yyyy"
+    Selection.AutoFill Destination:=Range("C1:C" & LastRow)
+
+    ' Construct Short day of the week helper column
+    Range("D1").Select
+    ActiveCell.FormulaR1C1 = "=TEXT(RC[-3], ""ddd"")"
+    Selection.AutoFill Destination:=Range("D1:D" & LastRow)
+    
+    ' Construct Short date helper column
+    Range("E1").Select
+    ActiveCell.FormulaR1C1 = "=TIME(HOUR(RC[-4]), MINUTE(RC[-4]), SECOND(RC[-4]))"
+    Selection.NumberFormat = "h:mm;@"
+    Selection.AutoFill Destination:=Range("E1:E" & LastRow)
+        
+    ' Description cells for time period average
+    Range("I1:N1").Font.Bold = "True"
+    Range("I2:N2").Interior.ColorIndex = 37
+    Cells(1, 9).Value = "7am to 10am"
+    Cells(1, 10).Value = "10am to 1pm"
+    Cells(1, 11).Value = "1pm to 4pm"
+    Cells(1, 12).Value = "4pm to 7pm"
+    Cells(1, 13).Value = "7pm to 10pm"
+    Cells(1, 14).Value = "10pm to 1am"
+
+    
+    ' Description cells for time period average
+    Range("I7:O7").Font.Bold = "True"
+    Range("I8:O8").Interior.ColorIndex = 37
+    Cells(7, 9).Value = "Sun"
+    Cells(7, 10).Value = "Mon"
+    Cells(7, 11).Value = "Tue"
+    Cells(7, 12).Value = "Wed"
+    Cells(7, 13).Value = "Thu"
+    Cells(7, 14).Value = "Fri"
+    Cells(7, 15).Value = "Sat"
+    
+    ' Adjust column width for A - N
+    Worksheets("Sheet1").Columns("A:N").AutoFit
+    
+    ' Set Ranges for time and date inputs
+    Dim DayOfWeekRange As Range, DayOfMonthRange As Range, TimeRange As Range
+    Set DayOfWeekRange = Range("I8 : O8") ' change the two above chunks to ranges to be more concise????
+
+'''''???'''''''''''?????''''''''''''''''''DELETE LAST TWO COLUMNS????????????????''''''''''??'''''''''????????''''''
+    ' Construct Short Dates for every day of the month as helper column
+    'Range("F1").Select
+    'ActiveCell.FormulaR1C1 = "=INT(RC[-5])"
+    'ActiveCell.Value = Range("F1").Value
+    'Selection.NumberFormat = "m/d/yyyy"
+    'Range("F2").Select
+    'Selection.Value = Range("F1").Value + 1
+    'Range("F3").Select
+    'Selection.Value = Range("F2").Value + 1
+    'Range("G1").Select ' Click Away
+    'Range("F1 : F3").Select
+    'Selection.AutoFill Destination:=Range("F1:F32"), Type:=xlFillDefault
+    
+    ' Calculate
+    'Range("G1").Select
+    'ActiveCell.FormulaR1C1 = "=COUNTIF(R1C3:R49C3, RC[-1])"
+    'Range("G1").Select
+    'Selection.AutoFill Destination:=Range("G1:G32")
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    
+    ' Tell User to input data for Times and Days of the Week
+     MsgBox "Fill in the blue cells with the number of instances for the month." & vbNewLin & _
+     "Then Run the 'Calculate_Averages' Macros", , "Enter Data Into Blue Cells!!!"
+        
+End Sub
+Sub Macro_2_Calculate_Averages()
+'
+'                              *********gsrr Averages Macro*********
+'
+'                                                                              '
+'      *****   ***    **   **   **   **   **   **   **   **    ***   *****     '
+'                                                                              '
+' **** Calculate Average Patrons per time period and per day of the week ****  '
+'                                                                              '
+'      *****   ***    **   **   **   **   **   **   **   **    ***    *****    '
+'
+
+Dim TimeRange As Range
+Set TimeRange = Range("E1", Range("E1").End(xlDown))
+LastRow = Cells.Find(What:="*", SearchDirection:=xlPrevious, SearchOrder:=xlByRows).Row
+Range("I3:M3").NumberFormat = "General"
+
+' Make origonal data font size 10 pt
+Worksheets(1).Range("B1", Range("B1").End(xlDown)).Font.Size = "10"
+
+' Calculate number of scans into GSRR for each time window
+Range("I3").Select
+ActiveCell.FormulaR1C1 = "=COUNTIFS(R1C5:R" & LastRow & "C5, "">=7:00"", R1C5:R" & LastRow & "C5, ""<10:00"")"
+Range("J3").Select
+ActiveCell.FormulaR1C1 = "=COUNTIFS(R1C5:R" & LastRow & "C5, "">=10:00"", R1C5:R" & LastRow & "C5, ""<13:00"")"
+Range("K3").Select
+ActiveCell.FormulaR1C1 = "=COUNTIFS(R1C5:R" & LastRow & "C5, "">=13:00"", R1C5:R" & LastRow & "C5, ""<16:00"")"
+Range("l3").Select
+ActiveCell.FormulaR1C1 = "=COUNTIFS(R1C5:R" & LastRow & "C5, "">=16:00"", R1C5:R" & LastRow & "C5, ""<19:00"")"
+Range("M3").Select
+ActiveCell.FormulaR1C1 = "=COUNTIFS(R1C5:R" & LastRow & "C5, "">=19:00"", R1C5:R" & LastRow & "C5, ""<22:00"")"
+
+' Average Scans based on number of times we were open for a particular time window
+Range("I4").Select
+ActiveCell.FormulaR1C1 = "=R[-1]C/R[-2]C"
+Selection.AutoFill Destination:=Range("I4:N4"), Type:=xlFillDefault
+Range("I5").Select
+ActiveCell.FormulaR1C1 = "=ROUND(R[-1]C, 0)"
+Selection.AutoFill Destination:=Range("I5:N5"), Type:=xlFillDefault
+
+' Calculate number of scans into GSRR for each day of the week
+Range("I9").Select
+ActiveCell.FormulaR1C1 = "=COUNTIF(R1C4:R" & LastRow & "C4, R[-2]C)"
+Selection.AutoFill Destination:=Range("I9:O9"), Type:=xlFillDefault
+
+' Average Scans based on day of the week
+Range("I10").Select
+ActiveCell.FormulaR1C1 = "=R[-1]C/R[-2]C"
+Selection.AutoFill Destination:=Range("I10:O10"), Type:=xlFillDefault
+Range("I11").Select
+ActiveCell.FormulaR1C1 = "=ROUND(R[-1]C, 0)"
+Selection.AutoFill Destination:=Range("I11:O11"), Type:=xlFillDefault
+
+' Calculate Totals
+Range("P9").Select
+ActiveCell.FormulaR1C1 = "=SUM(RC[-7]:RC[-1])"
+
+'Calc total from 10pm to 1am since 1am messes shit up a little (1 < 12...etc)
+Range("N3").Select
+ActiveCell.FormulaR1C1 = "=(R[6]C[2]-SUM(RC[-5]:RC[-1]))"
+Range("P3").Select
+ActiveCell.FormulaR1C1 = "=SUM(RC[-7]:RC[-2])"
+    
+' Make Averages bold and in green cells
+Range("I5:N5").Font.Bold = True
+Range("I5:N5").Interior.ColorIndex = 4
+Range("I11:N11").Font.Bold = True
+Range("I11:N11").Interior.ColorIndex = 4
+
+End Sub
+
+
+
+
+
