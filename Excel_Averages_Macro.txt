@@ -14,11 +14,11 @@ Sub Macro_1_Unique_Patrons()
         MsgBox "There is no range to be selected.", , "No cells contain any values."
         Exit Sub
     Else
-        
+       
         Dim FirstRow&, FirstCol&, LastRow&, LastCol&
         Dim myUsedRange As Range
         FirstRow = Cells.Find(What:="*", SearchDirection:=xlNext, SearchOrder:=xlByRows).Row
-        
+       
         On Error Resume Next
         FirstCol = Cells.Find(What:="*", SearchDirection:=xlNext, SearchOrder:=xlByColumns).Column
         If Err.Number <> 0 Then ' Handle error
@@ -28,24 +28,26 @@ Sub Macro_1_Unique_Patrons()
             "that should be removed in order to locate the range.", 64, "Please unmerge all cells."
             Exit Sub
         End If
-        
+       
         ' Set last row, last column, and first row *** first row is always row #1 ***
         LastRow = Cells.Find(What:="*", SearchDirection:=xlPrevious, SearchOrder:=xlByRows).Row
-        LastCol = Cells.Find(What:="*", SearchDirection:=xlPrevious, SearchOrder:=xlByColumns).Column
+        'LastCol = Cells.Find(What:="*", SearchDirection:=xlPrevious, SearchOrder:=xlByColumns).Column
+        LastCol = 2
         FirstRow = 1 'start of data is always in first row
-        
+       
         ' Set range to all of column B
+        ActiveSheet.Name = "Sheet1"
         Set myUsedRange = Range(Cells(FirstRow, LastCol), Cells(LastRow, LastCol))
         'myUsedRange.Select
         'MsgBox "The data range on this worksheet is " & myUsedRange.Address(0, 0) & ".", 64, "Range address:"
     End If
-   
+  
     'Copy data, past in new sheet, clean data
     myUsedRange.Select
     Selection.Copy
     Sheets.Add After:=ActiveSheet
     ActiveSheet.Paste
-    
+   
     ' Mr.Clean that data
     Selection.Replace What:="NW", Replacement:="", LookAt:=xlPart, _
         SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
@@ -76,30 +78,30 @@ Sub Macro_1_Unique_Patrons()
 '    Selection.Replace What:="NW", What:="NE", What:="S", What:="08", What:="06", _
 '        What:="04", What:="':", What:="([Unued])", Replacement:="", LookAt:=xlPart, _
 '        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False
-                                               
+                                              
     'Sort data
     Selection.Sort key1:=Range("A1", Range("A1").End(xlDown)), _
             order1:=xlAscending, Header:=xlNo
-         
+        
     ' label unique and non unique patrons
     Range("B1").Select
     ActiveCell.FormulaR1C1 = "=IF(R[1]C[-1]=RC[-1], ""not unique"", ""unique"")"
     Range("B1").Select
     Selection.AutoFill Destination:=Range("B1 :  B" & LastRow)
-    
+   
     ' count unique and non-unique
     Cells(1, 3).Value = "# Unique Patrons"
     Cells(1, 3).Font.Bold = True
     Cells(2, 3).Value = Application.CountIf(Range("B1 :  B" & LastRow), "unique")
-    
+   
     ' total patrons
     Cells(1, 5).Value = "# Room Entries"
     Cells(1, 5).Font.Bold = True
     Cells(2, 5).Value = LastRow
-    
+   
     ' Switch back to worksheet 1
     Worksheets("Sheet1").Activate
-    
+   
     ' Construct Short date helper column
     Range("C1").Select
     ActiveCell.FormulaR1C1 = "=INT(RC[-2])"
@@ -110,13 +112,13 @@ Sub Macro_1_Unique_Patrons()
     Range("D1").Select
     ActiveCell.FormulaR1C1 = "=TEXT(RC[-3], ""ddd"")"
     Selection.AutoFill Destination:=Range("D1:D" & LastRow)
-    
+   
     ' Construct Short date helper column
     Range("E1").Select
     ActiveCell.FormulaR1C1 = "=TIME(HOUR(RC[-4]), MINUTE(RC[-4]), SECOND(RC[-4]))"
     Selection.NumberFormat = "h:mm;@"
     Selection.AutoFill Destination:=Range("E1:E" & LastRow)
-        
+       
     ' Description cells for time period average
     Range("I1:N1").Font.Bold = "True"
     Range("I2:N2").Interior.ColorIndex = 37
@@ -127,7 +129,7 @@ Sub Macro_1_Unique_Patrons()
     Cells(1, 13).Value = "7pm to 10pm"
     Cells(1, 14).Value = "10pm to 1am"
 
-    
+   
     ' Description cells for time period average
     Range("I7:O7").Font.Bold = "True"
     Range("I8:O8").Interior.ColorIndex = 37
@@ -138,10 +140,10 @@ Sub Macro_1_Unique_Patrons()
     Cells(7, 13).Value = "Thu"
     Cells(7, 14).Value = "Fri"
     Cells(7, 15).Value = "Sat"
-    
+   
     ' Adjust column width for A - N
     Worksheets("Sheet1").Columns("A:N").AutoFit
-    
+   
     ' Set Ranges for time and date inputs
     Dim DayOfWeekRange As Range, DayOfMonthRange As Range, TimeRange As Range
     Set DayOfWeekRange = Range("I8 : O8") ' change the two above chunks to ranges to be more concise????
@@ -159,18 +161,18 @@ Sub Macro_1_Unique_Patrons()
     'Range("G1").Select ' Click Away
     'Range("F1 : F3").Select
     'Selection.AutoFill Destination:=Range("F1:F32"), Type:=xlFillDefault
-    
+   
     ' Calculate
     'Range("G1").Select
     'ActiveCell.FormulaR1C1 = "=COUNTIF(R1C3:R49C3, RC[-1])"
     'Range("G1").Select
     'Selection.AutoFill Destination:=Range("G1:G32")
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-    
+   
     ' Tell User to input data for Times and Days of the Week
      MsgBox "Fill in the blue cells with the number of instances for the month." & vbNewLin & _
      "Then Run the 'Calculate_Averages' Macros", , "Enter Data Into Blue Cells!!!"
-        
+       
 End Sub
 Sub Macro_2_Calculate_Averages()
 '
@@ -234,7 +236,7 @@ Range("N3").Select
 ActiveCell.FormulaR1C1 = "=(R[6]C[2]-SUM(RC[-5]:RC[-1]))"
 Range("P3").Select
 ActiveCell.FormulaR1C1 = "=SUM(RC[-7]:RC[-2])"
-    
+   
 ' Make Averages bold and in green cells
 Range("I5:N5").Font.Bold = True
 Range("I5:N5").Interior.ColorIndex = 4
@@ -242,8 +244,4 @@ Range("I11:N11").Font.Bold = True
 Range("I11:N11").Interior.ColorIndex = 4
 
 End Sub
-
-
-
-
 
